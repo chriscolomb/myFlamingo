@@ -9,7 +9,7 @@ bot = commands.Bot()
 async def on_ready():
     print(f'We have logged in as {bot.user}')
 
-@bot.slash_command(description="My first slash command", guild_ids=[GUILD_ID])
+@bot.slash_command(description="Starter command", guild_ids=[GUILD_ID])
 async def hello(interaction: nextcord.Interaction):
     await interaction.send("Hello!")
 
