@@ -36,5 +36,4 @@ function getPool(lp){
 getPool(lp_data);
 console.log(pool_list);
 
-
-// console.log(getPool(lp_data));
+// console.log(lp_data);
