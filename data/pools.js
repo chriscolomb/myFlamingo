@@ -1,4 +1,4 @@
-import tokens from "./tokens";
+import tokens from "./tokens.js";
 
 export default {
   "FLP-FLM-bNEO": {
