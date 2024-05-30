@@ -1,8 +1,12 @@
-const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+import {Client, GatewayIntentBits, EmbedBuilder} from 'discord.js';
+import Api from './js/api-service.js';
 
 const address = 'NYtBFomNFzMPsKosGajLaJ7NoaQ1b7cZXj';
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+
+const api = new Api(address);
+const pool_list = await api.getPool(address);
 
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
@@ -22,6 +26,7 @@ client.on('interactionCreate', async (interaction) => {
   }
 
   if (commandName === 'dashboard') {
+    console.log(pool_list);
     const embed = new EmbedBuilder()
       .setTitle(`Dashboard for \`${address}\``)
       .setColor('#d741c4')
