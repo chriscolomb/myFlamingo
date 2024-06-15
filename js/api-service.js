@@ -29,6 +29,20 @@ async getPool(){
     return this.pool_list;  
 }
 
+async get_unit_price(symbol){
+    const data = await this.client.getFlamingoLivedataPricesLatest();
+    console.log(data);
+    for (let i = 0; i < data.length; i++){
+         if (data[i].symbol === symbol){
+             return data[i].usd_price;
+         }
+    }
+}
+
+
+
+
+
 }
 
 
