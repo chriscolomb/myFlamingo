@@ -71,6 +71,10 @@ export default class ApiClient {
     return this.fetchData("/flamingo/live-data/prices/latest", {});
   }
 
+  async getFlamingoLivedataPooldataLatest() {
+    return this.fetchData("/flamingo/live-data/pool-data/latest", {});
+  }
+
   async getFlamingoLivedataPricesFromblock(blocknumber) {
     return this.fetchData(`/flamingo/live-data/prices/from-block/${blocknumber}`, {});
   }
