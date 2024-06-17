@@ -63,10 +63,20 @@ async function getTokenAmount(address){
     return poolInfo;
 }
 
+function getLV(poolInfo){
+    for (const [key,value] of Object.entries(poolInfo)){
+        const lv = value.lp_token_amount / value.lp_token_supply * value.total_usd_value;
+        poolInfo[key].lv = lv;
+    }
+    return poolInfo;
+}
+
 getTokenAmount("NYtBFomNFzMPsKosGajLaJ7NoaQ1b7cZXj")
   .then(poolInfo => {
-    console.log(getPoolInfo(poolInfo)); // Logging getPoolInfo after getTokenAmount finishes
+    getPoolInfo(poolInfo);
+    console.log(getLV(poolInfo)); 
   });
+
 
 // getTokenAmount("NYtBFomNFzMPsKosGajLaJ7NoaQ1b7cZXj");
 // console.log(getTokenAmount("NYtBFomNFzMPsKosGajLaJ7NoaQ1b7cZXj"));
