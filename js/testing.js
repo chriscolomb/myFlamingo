@@ -2,7 +2,7 @@ import ApiClient from './api-client.js';
 import pools from '../data/pools.js';
 import tokens from '../data/tokens.js';
 
-// 
+// NYtBFomNFzMPsKosGajLaJ7NoaQ1b7cZXj
 
 const client = new ApiClient();
 
@@ -48,19 +48,26 @@ function getPoolInfo(my_pool_data){
 }
 
 async function getTokenAmount(address){
-    
-    const walletData = await client.getWalletWalletLatest(address);
-    const walletLiquidityData = walletData.data[0].liquidity;
-    
-    for (const [key, value] of Object.entries(walletLiquidityData)) {
-        if (!poolInfo[key]) {
-            poolInfo[key] = {}; 
+
+    try{
+        const walletData = await client.getWalletWalletLatest(address);
+        const walletLiquidityData = walletData.data[0].liquidity;
+        
+        for (const [key, value] of Object.entries(walletLiquidityData)) {
+            if (!poolInfo[key]) {
+                poolInfo[key] = {}; 
+            }
+            poolInfo[key].symbol = getPoolName(key);
+            poolInfo[key].lp_token_amount = parseInt(value.lp_token_amount, 10);
+        
         }
-        poolInfo[key].symbol = getPoolName(key);
-        poolInfo[key].lp_token_amount = parseInt(value.lp_token_amount, 10);
-    
+        return poolInfo;
+    } catch (error){
+        console.error("Error fetching data from URL: /wallet/wallet/latest:", error);
+        throw error;
     }
-    return poolInfo;
+    
+    
 }
 
 function getLV(poolInfo){
