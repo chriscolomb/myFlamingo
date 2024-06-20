@@ -39,7 +39,8 @@ function getPoolInfo(my_pool_data){
         for (const [key, value] of Object.entries(poolDataLatest)){
             if (key === pool_key){
                 poolInfo[key].lp_token_supply = value.lp_token_supply;
-                poolInfo[key].total_usd_value = value.total_usd_value;    
+                poolInfo[key].total_usd_value = value.total_usd_value;
+                poolInfo[key].apy = value.apy;    
             }
         }
     
