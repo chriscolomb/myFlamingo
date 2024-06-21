@@ -29,10 +29,7 @@ function getTokenName(tokenHash){
     }
 }
 
-// const poolInfo = {'0x4d5a85b0c83777df72cfb665a933970e4e20c0ec': { lp: '223778147029', symbol: 'FLP-FLM-bNEO' },
-//   '0x3269ece5dc33adf17ed14be7780693f3c8b102d1': { lp: '157722325', symbol: 'FLP-bNEO-FUSD' },
-//   '0x20c0cdd773fe704721669870c7b33b8688aa132c': { lp: '32353903179', symbol: 'FLP-fUSDT-FUSD' }};
-
+// function to get the pook lp_token_supply, total_usd_value and apy by looping through the object and comparing the pool hash key
 const poolInfo = {};
 function getPoolInfo(my_pool_data){
     for (const [pool_key, pool_value] of Object.entries(my_pool_data)){
@@ -48,6 +45,7 @@ function getPoolInfo(my_pool_data){
     return poolInfo; 
 }
 
+// function to find the which pool the user has liquidity in and get the lp_token_amount and the symbol of the pool and store it in an object
 async function getTokenAmount(address){
 
     try{
@@ -71,6 +69,7 @@ async function getTokenAmount(address){
     
 }
 
+// function to calculate the liquidity value of the pool
 function getLV(poolInfo){
     for (const [key,value] of Object.entries(poolInfo)){
         const lv = value.lp_token_amount / value.lp_token_supply * value.total_usd_value;
@@ -86,10 +85,4 @@ getTokenAmount("NYtBFomNFzMPsKosGajLaJ7NoaQ1b7cZXj")
   });
 
 
-// getTokenAmount("NYtBFomNFzMPsKosGajLaJ7NoaQ1b7cZXj");
-// console.log(getTokenAmount("NYtBFomNFzMPsKosGajLaJ7NoaQ1b7cZXj"));
-
-// console.log(getPoolInfo("0x4d5a85b0c83777df72cfb665a933970e4e20c0ec"));
-
-// lp_token_amount / lp_token_supply * total_usd_value 
 
