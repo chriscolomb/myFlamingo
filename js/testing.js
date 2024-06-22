@@ -78,11 +78,27 @@ function getLV(poolInfo){
     return poolInfo;
 }
 
-getTokenAmount("NYtBFomNFzMPsKosGajLaJ7NoaQ1b7cZXj")
-  .then(poolInfo => {
-    getPoolInfo(poolInfo);
-    console.log(getLV(poolInfo)); 
-  });
+// function to get the exchange rate of a currency from USD
+async function getExchangeRate(currency){
+    try{
+        const pair = "USD_" + currency;
+        const fiatExchangeRate = await client.getFlamingoLivedataFiatexchangerate(pair);
+        return fiatExchangeRate;
 
+    } catch (error){
+        console.error("Error fetching data from URL: /flamingo/live-data/fiat-exchange-rate/{pair}:", error);
+        throw error;
+    } 
+}
+
+getExchangeRate("CAD").then(data => console.log(data));
+
+// getTokenAmount("NYtBFomNFzMPsKosGajLaJ7NoaQ1b7cZXj")
+//   .then(poolInfo => {
+//     getPoolInfo(poolInfo);
+//     console.log(getLV(poolInfo)); 
+//   });
+
+// getExchangeRate("EUR");
 
 
