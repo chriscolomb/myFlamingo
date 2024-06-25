@@ -136,7 +136,30 @@ client.on('interactionCreate', async (interaction) => {
         .setColor('#d741c4');
       await interaction.editReply({ embeds: [embed] });
     }
-  } 
+  } else if (commandName === 'currency') {
+    await interaction.deferReply();
+    const currency = interaction.options.getString('currency');
+    const userID = interaction.user.id;
+    try {
+      await usersCollection.updateOne(
+        { userID: userID }, 
+        { $set: { currency: currency } }, 
+        { upsert: true }
+      );
+      const embed = new EmbedBuilder()
+        .setTitle('Currency set!')
+        .setDescription(`Successfully set currency to \`${currency}\`.`)
+        .setColor('#d741c4');
+      await interaction.editReply({ embeds: [embed] });
+    } catch (error) {
+      console.error('Failed to set currency:', error);
+      const embed = new EmbedBuilder()
+        .setTitle('Error')
+        .setDescription('Failed to set currency. Please try again later.')
+        .setColor('#d741c4');
+      await interaction.editReply({ embeds: [embed] });
+    }
+  }
 });
 
 client.login(process.env.DISCORD_TOKEN);
