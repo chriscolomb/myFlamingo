@@ -136,7 +136,7 @@ client.on('interactionCreate', async (interaction) => {
         .setColor('#d741c4');
       await interaction.editReply({ embeds: [embed] });
     }
-  }
+  } 
 });
 
 client.login(process.env.DISCORD_TOKEN);
