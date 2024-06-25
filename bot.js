@@ -34,6 +34,35 @@ client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
 });
 
+const getCoinEmoji = (coin) => {
+  const coinEmojis = {
+    'bNEO': '<:bNEO:1245586402448511026>',
+    'CANDY': '<:CANDY:1245586404591931433>',
+    'DOGER': '<:DOGER:1245586406605324359>',
+    'fBNB': '<:fBNB:1245586409029505036>',
+    'fCAKE': '<:fCAKE:1245586410795175937>',
+    'FDE': '<:FDE:1245586412938592338>',
+    'FLM': '<:FLM:1245586415077560402>',
+    'FLOCKS': '<:FLOCKS:1245586417304866858>',
+    'FLUND': '<:FLUND:1245586419385368597>',
+    'FUSD': '<:FUSD:1245586422472376474>',
+    'fUSDT': '<:fUSDT:1245586426309906473>',
+    'fWBTC': '<:fWBTC:1245586427975045192>',
+    'fWETH': '<:fWETH:1245586429694971916>',
+    'GAS': '<:GAS:1245586431955701880>',
+    'GM': '<:GM:1245586434581200907>',
+    'NEO': '<:NEO:1245587545803194409>',
+    'pONT': '<:pONT:1245586438964252703>',
+    'SOM': '<:SOM:1245586442969681940>',
+    'SWTH': '<:SWTH:1245586446111211681>',
+    'TIPS': '<:TIPS:1245586449542152234>',
+    'WING': '<:WING:1245587544113025064>'
+  };
+
+  // Check if coin exists in coinEmojis, return corresponding emoji, else return empty string
+  return coinEmojis.hasOwnProperty(coin) ? coinEmojis[coin] : '';
+};
+
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isCommand()) return;
 
@@ -159,6 +188,14 @@ client.on('interactionCreate', async (interaction) => {
         .setColor('#d741c4');
       await interaction.editReply({ embeds: [embed] });
     }
+  } else if (commandName === 'test') {
+    await interaction.deferReply();
+    const emoji = getCoinEmoji('GAS');
+    const embed = new EmbedBuilder()
+      .setTitle('Test')
+      .setDescription('emoji: ' + emoji)
+      .setColor('#d741c4');
+    await interaction.editReply({ embeds: [embed] });
   }
 });
 

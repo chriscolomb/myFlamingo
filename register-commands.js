@@ -57,6 +57,10 @@ const commands = [
         ],
       },
     ],
+  },
+  {
+    name: 'test',
+    description: 'Test command',
   }
 ];
 
