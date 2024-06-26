@@ -63,6 +63,21 @@ const getCoinEmoji = (coin) => {
   return coinEmojis.hasOwnProperty(coin) ? coinEmojis[coin] : '';
 };
 
+const getLiquidityPools = async (api, address) => {
+  const pool_list = await api.getPool(address);
+  const uniquePools = [...new Set(pool_list)];
+  let liquidity_pools = "";
+  for (const p of uniquePools) {
+    const coin1 = p.split("-")[1];
+    const coin2 = p.split("-")[2];
+    const coin1_emoji = getCoinEmoji(coin1);
+    const coin2_emoji = getCoinEmoji(coin2);
+    liquidity_pools += coin1_emoji + coin2_emoji + ` \`${p}\`` + "\n";
+  }
+  liquidity_pools = liquidity_pools.slice(0, -1); // remove last \n
+  return liquidity_pools;
+}
+
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isCommand()) return;
 
@@ -84,18 +99,7 @@ client.on('interactionCreate', async (interaction) => {
         const address = userDoc.address;
         const api = new Api(address);
         try {
-          const pool_list = await api.getPool(address);
-          const uniquePools = [...new Set(pool_list)];
-          let liquidity_pools = "";
-            for (const p of uniquePools) {
-              const coin1 = p.split("-")[1];
-              const coin2 = p.split("-")[2];
-              const coin1_emoji = getCoinEmoji(coin1);
-              const coin2_emoji = getCoinEmoji(coin2);
-              liquidity_pools += coin1_emoji + coin2_emoji + ` \`${p}\`` + "\n";
-            }
-          console.log(liquidity_pools);
-          liquidity_pools = liquidity_pools.slice(0, -1); // remove last \n
+          const liquidity_pools = await getLiquidityPools(api, address);
           const price = await api.get_unit_price('FUSD');
           // console.log(price);
           const embed = new EmbedBuilder()
