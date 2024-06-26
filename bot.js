@@ -85,13 +85,24 @@ client.on('interactionCreate', async (interaction) => {
         const api = new Api(address);
         try {
           const pool_list = await api.getPool(address);
+          const uniquePools = [...new Set(pool_list)];
+          let liquidity_pools = "";
+            for (const p of uniquePools) {
+              const coin1 = p.split("-")[1];
+              const coin2 = p.split("-")[2];
+              const coin1_emoji = getCoinEmoji(coin1);
+              const coin2_emoji = getCoinEmoji(coin2);
+              liquidity_pools += coin1_emoji + coin2_emoji + ` \`${p}\`` + "\n";
+            }
+          console.log(liquidity_pools);
+          liquidity_pools = liquidity_pools.slice(0, -1); // remove last \n
           const price = await api.get_unit_price('FUSD');
-          console.log(price);
+          // console.log(price);
           const embed = new EmbedBuilder()
             .setTitle(`Dashboard for \`${address}\``)
             .setColor('#d741c4')
             .addFields(
-              { name: 'Liquidity Pools', value: `\`${pool_list[0]}\``, inline: false },
+              { name: 'Liquidity Pools', value: liquidity_pools, inline: false },
               { name: 'TLV', value: '`...`', inline: false },
               { name: 'Unclaimed Rewards', value: '`...`', inline: false },
               { name: 'Unclaimed Values', value: '`...`', inline: false },
