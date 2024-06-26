@@ -85,6 +85,8 @@ client.on('interactionCreate', async (interaction) => {
         const api = new Api(address);
         try {
           const pool_list = await api.getPool(address);
+          const price = await api.get_unit_price('FUSD');
+          console.log(price);
           const embed = new EmbedBuilder()
             .setTitle(`Dashboard for \`${address}\``)
             .setColor('#d741c4')
