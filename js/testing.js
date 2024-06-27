@@ -91,13 +91,61 @@ async function getExchangeRate(currency){
     } 
 }
 
-getExchangeRate("CAD").then(data => console.log(data));
 
-// getTokenAmount("NYtBFomNFzMPsKosGajLaJ7NoaQ1b7cZXj")
-//   .then(poolInfo => {
-//     getPoolInfo(poolInfo);
-//     console.log(getLV(poolInfo)); 
-//   });
+// ALREADY IMPLEMENTED IN THE API-CLIENT.JS
+async function get_unit_price(symbol){
+    const data = await client.getFlamingoLivedataPricesLatest();
+    for (let i = 0; i < data.length; i++){
+         if (data[i].symbol === symbol){
+             return data[i].usd_price;
+         }
+    }
+}
+
+async function getRestakeTime(poolInfo){
+    const gasPrice = await get_unit_price("GAS");
+    // console.log("gasPrice: " + gasPrice)
+    const costToReStake = 0.6 * gasPrice;
+    // console.log("costToReStake: " + costToReStake)
+
+    for (const [key, value] of Object.entries(poolInfo)){
+        if (!value.lv){
+            continue;
+        }
+        const apy = value.apy /100;
+        // console.log("apy: " + apy)
+        const usdPrDay = value.lv * (apy / 365);
+        // console.log("usdPrDay: " + usdPrDay)
+
+        let bestWorth = 0;
+        let bestNumCompound = 0;
+
+        for (let i = 1; i < 365; i +=1){
+            const tmp = ((1+apy/i) ** i) * value.lv - costToReStake * i;
+            if (tmp > bestWorth){
+                bestNumCompound = i;
+                bestWorth = tmp;
+            }
+        }
+        const period = 365 / bestNumCompound;  
+        const result = {
+            periodValue: usdPrDay * period,
+            compoundsPrYear: bestNumCompound
+        }
+        poolInfo[key].restakeTime = result;
+        
+    }
+    return poolInfo;
+}
+// getExchangeRate("CAD").then(data => console.log(data));
+
+getTokenAmount("NYtBFomNFzMPsKosGajLaJ7NoaQ1b7cZXj")
+  .then(poolInfo => {
+    getPoolInfo(poolInfo);
+    getLV(poolInfo);
+    console.log(getRestakeTime(poolInfo));
+     
+  });
 
 // getExchangeRate("EUR");
 
