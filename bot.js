@@ -2,6 +2,7 @@ import { Client, GatewayIntentBits, EmbedBuilder } from 'discord.js';
 import Api from './js/api-service.js';
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import dotenv from 'dotenv';
+import { getExchangeRate } from './js/convert.js';
 
 dotenv.config();
 
