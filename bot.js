@@ -100,8 +100,15 @@ client.on('interactionCreate', async (interaction) => {
         const api = new Api(address);
         try {
           const liquidity_pools = await getLiquidityPools(api, address);
-          const price = await api.get_unit_price('FUSD');
+          // const price = await api.get_unit_price('FUSD');
           // console.log(price);
+          const myPoolData = {};
+          await api.getTokenAmount(address, myPoolData);
+          await api.getPoolInfo(myPoolData);
+          await api.getLV(myPoolData);
+          await api.getRestakeTime(myPoolData);
+          console.log(myPoolData);
+
           const embed = new EmbedBuilder()
             .setTitle(`Dashboard for \`${address}\``)
             .setColor('#d741c4')
