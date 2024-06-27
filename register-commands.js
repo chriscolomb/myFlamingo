@@ -23,6 +23,44 @@ const commands = [
   {
     name: 'unregister',
     description: 'Unregisters your NEO address',
+  },
+  {
+    name: 'currency',
+    description: 'Sets the currency for the dashboard',
+    options: [
+      {
+        name: 'currency',
+        type: 3,
+        description: 'The currency to set',
+        required: true,
+        choices: [
+          { name: 'United States Dollar (USD)', value: 'USD' },
+          { name: 'Euro (EUR)', value: 'EUR' },
+          { name: 'Japanese Yen (JPY)', value: 'JPY' },
+          { name: 'South Korean Won (KRW)', value: 'KRW' },
+          { name: 'British Pound (GBP)', value: 'GBP' },
+          { name: 'Chinese Yuan (CNY)', value: 'CNY' },
+          { name: 'Canadian Dollar (CAD)', value: 'CAD' },
+          { name: 'Australian Dollar (AUD)', value: 'AUD' },
+          { name: 'Swiss Franc (CHF)', value: 'CHF' },
+          { name: 'Russian Ruble (RUB)', value: 'RUB' },
+          { name: 'Singapore Dollar (SGD)', value: 'SGD' },
+          { name: 'Hong Kong Dollar (HKD)', value: 'HKD' },
+          { name: 'Indian Rupee (INR)', value: 'INR' },
+          { name: 'Brazilian Real (BRL)', value: 'BRL' },
+          { name: 'Turkish New Lira (TRY)', value: 'TRY' },
+          { name: 'Mexican Peso (MXN)', value: 'MXN' },
+          { name: 'South African Rand (ZAR)', value: 'ZAR' },
+          { name: 'New Zealand Dollar (NZD)', value: 'NZD' },
+          { name: 'Swedish Krona (SEK)', value: 'SEK' },
+          { name: 'Norwegian Krone (NOK)', value: 'NOK' }
+        ],
+      },
+    ],
+  },
+  {
+    name: 'test',
+    description: 'Test command',
   }
 ];
 

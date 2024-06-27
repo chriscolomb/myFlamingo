@@ -34,6 +34,50 @@ client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
 });
 
+const getCoinEmoji = (coin) => {
+  const coinEmojis = {
+    'bNEO': '<:bNEO:1245586402448511026>',
+    'CANDY': '<:CANDY:1245586404591931433>',
+    'DOGER': '<:DOGER:1245586406605324359>',
+    'fBNB': '<:fBNB:1245586409029505036>',
+    'fCAKE': '<:fCAKE:1245586410795175937>',
+    'FDE': '<:FDE:1245586412938592338>',
+    'FLM': '<:FLM:1245586415077560402>',
+    'FLOCKS': '<:FLOCKS:1245586417304866858>',
+    'FLUND': '<:FLUND:1245586419385368597>',
+    'FUSD': '<:FUSD:1245586422472376474>',
+    'fUSDT': '<:fUSDT:1245586426309906473>',
+    'fWBTC': '<:fWBTC:1245586427975045192>',
+    'fWETH': '<:fWETH:1245586429694971916>',
+    'GAS': '<:GAS:1245586431955701880>',
+    'GM': '<:GM:1245586434581200907>',
+    'NEO': '<:NEO:1245587545803194409>',
+    'pONT': '<:pONT:1245586438964252703>',
+    'SOM': '<:SOM:1245586442969681940>',
+    'SWTH': '<:SWTH:1245586446111211681>',
+    'TIPS': '<:TIPS:1245586449542152234>',
+    'WING': '<:WING:1245587544113025064>'
+  };
+
+  // Check if coin exists in coinEmojis, return corresponding emoji, else return empty string
+  return coinEmojis.hasOwnProperty(coin) ? coinEmojis[coin] : '';
+};
+
+const getLiquidityPools = async (api, address) => {
+  const pool_list = await api.getPool(address);
+  const uniquePools = [...new Set(pool_list)];
+  let liquidity_pools = "";
+  for (const p of uniquePools) {
+    const coin1 = p.split("-")[1];
+    const coin2 = p.split("-")[2];
+    const coin1_emoji = getCoinEmoji(coin1);
+    const coin2_emoji = getCoinEmoji(coin2);
+    liquidity_pools += coin1_emoji + coin2_emoji + ` \`${p}\`` + "\n";
+  }
+  liquidity_pools = liquidity_pools.slice(0, -1); // remove last \n
+  return liquidity_pools;
+}
+
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isCommand()) return;
 
@@ -55,14 +99,14 @@ client.on('interactionCreate', async (interaction) => {
         const address = userDoc.address;
         const api = new Api(address);
         try {
-          const pool_list = await api.getPool(address);
+          const liquidity_pools = await getLiquidityPools(api, address);
           const price = await api.get_unit_price('FUSD');
-          console.log(price);
+          // console.log(price);
           const embed = new EmbedBuilder()
             .setTitle(`Dashboard for \`${address}\``)
             .setColor('#d741c4')
             .addFields(
-              { name: 'Liquidity Pools', value: `\`${pool_list[0]}\``, inline: false },
+              { name: 'Liquidity Pools', value: liquidity_pools, inline: false },
               { name: 'TLV', value: '`...`', inline: false },
               { name: 'Unclaimed Rewards', value: '`...`', inline: false },
               { name: 'Unclaimed Values', value: '`...`', inline: false },
@@ -138,6 +182,37 @@ client.on('interactionCreate', async (interaction) => {
         .setColor('#d741c4');
       await interaction.editReply({ embeds: [embed] });
     }
+  } else if (commandName === 'currency') {
+    await interaction.deferReply();
+    const currency = interaction.options.getString('currency');
+    const userID = interaction.user.id;
+    try {
+      await usersCollection.updateOne(
+        { userID: userID }, 
+        { $set: { currency: currency } }, 
+        { upsert: true }
+      );
+      const embed = new EmbedBuilder()
+        .setTitle('Currency set!')
+        .setDescription(`Successfully set currency to \`${currency}\`.`)
+        .setColor('#d741c4');
+      await interaction.editReply({ embeds: [embed] });
+    } catch (error) {
+      console.error('Failed to set currency:', error);
+      const embed = new EmbedBuilder()
+        .setTitle('Error')
+        .setDescription('Failed to set currency. Please try again later.')
+        .setColor('#d741c4');
+      await interaction.editReply({ embeds: [embed] });
+    }
+  } else if (commandName === 'test') {
+    await interaction.deferReply();
+    const emoji = getCoinEmoji('GAS');
+    const embed = new EmbedBuilder()
+      .setTitle('Test')
+      .setDescription('emoji: ' + emoji)
+      .setColor('#d741c4');
+    await interaction.editReply({ embeds: [embed] });
   }
 });
 
