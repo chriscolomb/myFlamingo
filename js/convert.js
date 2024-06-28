@@ -36,6 +36,40 @@ export async function getExchangeRate(currency){
         throw error;
     } 
 }
+
+function isLeapYear(year){
+    if (year % 4 === 0){
+        if (year % 100 === 0){
+            if (year % 400 === 0){
+                return true;
+            }else{
+                return false;
+            }
+        }else{
+            return true;
+        }
+    }else{
+        return false;
+    }
+}
+
+export function getRestakeDays(compoundsPrYear){
+    const currentYear = new Date().getFullYear();
+    const isLeap = isLeapYear(currentYear);
+    let restakeDays = 0;
+    if (isLeap === true){
+        restakeDays = 366/compoundsPrYear;
+    }else{
+        restakeDays = 365/compoundsPrYear;
+    }
+    return Math.ceil(restakeDays);
+}
+
+async function getLastClaimDate(){
+    const data = await client.getWalletClaimsLatest('NYtBFomNFzMPsKosGajLaJ7NoaQ1b7cZXj')
+    const latestClaimData = data.data;
+    return latestClaimData;
+}
         
 // getExchangeRate("CAD").then(data => console.log(data));
 
@@ -47,5 +81,8 @@ export async function getExchangeRate(currency){
 
      
 //   });
+
+// console.log(getRestakeDays(5));
+// getLastClaimDate().then(data => console.log(data));
 
 
