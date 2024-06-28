@@ -85,9 +85,21 @@ const getLiquidityPools = async (api, currency) => {
       const coin2_emoji = getCoinEmoji(coin2);
       const tlv = currency !== "USD" ? await getExchangeRate(currency) * myPoolData[pool].lv : myPoolData[pool].lv;
       total_tlv += tlv;
+      // if date object optimal_claim_date is in the past, set to "Now"
+      let optimal_claim_date = myPoolData[pool].optimal_claim_date;
+      if (optimal_claim_date < new Date()) {
+        optimal_claim_date = "Now";
+      } else {
+        const diffTime = Math.abs(myPoolData[pool].optimal_claim_date - new Date());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        optimal_claim_date = `${diffDays} days`;
+      }
+
       lp_value += "\n" + coin1_emoji + coin2_emoji + ` \`${myPoolData[pool].symbol}\`` + "\n";
       lp_value += `> **TLV:** \`${tlv.toFixed(2)} ${currency}\`\n`;
       lp_value += `> **APY:** \`${myPoolData[pool].apy.toFixed(2)}%\`\n`;
+      lp_value += `> **Last Claimed Date:** \`${myPoolData[pool].last_claimed.toDateString()}\`\n`;
+      lp_value += `> **Optimal Restake in:** \`${optimal_claim_date}\`\n`;
     }
   }
   lp_value += `\n**Total TLV:** \`${total_tlv.toFixed(2)} ${currency}\``;
@@ -116,7 +128,7 @@ client.on('interactionCreate', async (interaction) => {
         const currency = userDoc.currency || "USD";
         const api = new Api(address);
         try {
-          const lp_value = await getLiquidityPools(api, address, currency);
+          const lp_value = await getLiquidityPools(api, currency);
           const embed = new EmbedBuilder()
             .setTitle(`Dashboard for \`${address}\``)
             .setColor('#d741c4')
