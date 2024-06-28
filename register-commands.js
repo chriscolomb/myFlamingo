@@ -25,6 +25,10 @@ const commands = [
     description: 'Unregisters your NEO address',
   },
   {
+    name: 'notify',
+    description: 'Sets up notifications via DM when it is time for optimal restake'
+  },
+  {
     name: 'currency',
     description: 'Sets the currency for the dashboard',
     options: [

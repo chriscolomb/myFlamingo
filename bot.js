@@ -1,4 +1,5 @@
-import { Client, GatewayIntentBits, EmbedBuilder } from 'discord.js';
+import { Client, GatewayIntentBits, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js';
+
 import Api from './js/api-service.js';
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import dotenv from 'dotenv';
@@ -64,19 +65,32 @@ const getCoinEmoji = (coin) => {
   return coinEmojis.hasOwnProperty(coin) ? coinEmojis[coin] : '';
 };
 
-const getLiquidityPools = async (api, address) => {
-  const pool_list = await api.getPool(address);
-  const uniquePools = [...new Set(pool_list)];
-  let liquidity_pools = "";
-  for (const p of uniquePools) {
-    const coin1 = p.split("-")[1];
-    const coin2 = p.split("-")[2];
-    const coin1_emoji = getCoinEmoji(coin1);
-    const coin2_emoji = getCoinEmoji(coin2);
-    liquidity_pools += coin1_emoji + coin2_emoji + ` \`${p}\`` + "\n";
+const getLiquidityPools = async (api, address, currency) => {
+  let myPoolData = {};
+  await api.getTokenAmount(address, myPoolData);
+  await api.getPoolInfo(myPoolData);
+  await api.getLV(myPoolData);
+  await api.getRestakeTime(myPoolData);
+  console.log(myPoolData);
+  myPoolData = Object.fromEntries(Object.entries(myPoolData).sort(([,a],[,b]) => b.lv - a.lv)); // sort by lv
+
+  let lp_value = "";
+  let total_tlv = 0;
+  for (const pool in myPoolData) {
+    if (myPoolData[pool].lv > 10) {
+      const coin1 = myPoolData[pool].symbol.split("-")[1];
+      const coin2 = myPoolData[pool].symbol.split("-")[2];
+      const coin1_emoji = getCoinEmoji(coin1);
+      const coin2_emoji = getCoinEmoji(coin2);
+      const tlv = currency !== "USD" ? await getExchangeRate(currency) * myPoolData[pool].lv : myPoolData[pool].lv;
+      total_tlv += tlv;
+      lp_value += "\n" + coin1_emoji + coin2_emoji + ` \`${myPoolData[pool].symbol}\`` + "\n";
+      lp_value += `> **TLV:** \`${tlv.toFixed(2)} ${currency}\`\n`;
+      lp_value += `> **APY:** \`${myPoolData[pool].apy.toFixed(2)}%\`\n`;
+    }
   }
-  liquidity_pools = liquidity_pools.slice(0, -1); // remove last \n
-  return liquidity_pools;
+  lp_value += `\n**Total TLV:** \`${total_tlv.toFixed(2)} ${currency}\``;
+  return lp_value;
 }
 
 client.on('interactionCreate', async (interaction) => {
@@ -98,28 +112,15 @@ client.on('interactionCreate', async (interaction) => {
         return;
       } else {
         const address = userDoc.address;
+        const currency = userDoc.currency || "USD";
         const api = new Api(address);
         try {
-          const liquidity_pools = await getLiquidityPools(api, address);
-          // const price = await api.get_unit_price('FUSD');
-          // console.log(price);
-          const myPoolData = {};
-          await api.getTokenAmount(address, myPoolData);
-          await api.getPoolInfo(myPoolData);
-          await api.getLV(myPoolData);
-          await api.getRestakeTime(myPoolData);
-          console.log(myPoolData);
-
+          const lp_value = await getLiquidityPools(api, address, currency);
           const embed = new EmbedBuilder()
             .setTitle(`Dashboard for \`${address}\``)
             .setColor('#d741c4')
             .addFields(
-              { name: 'Liquidity Pools', value: liquidity_pools, inline: false },
-              { name: 'TLV', value: '`...`', inline: false },
-              { name: 'Unclaimed Rewards', value: '`...`', inline: false },
-              { name: 'Unclaimed Values', value: '`...`', inline: false },
-              { name: 'APR', value: '`...`', inline: false },
-              { name: 'Optimal Restake Time', value: '`...`', inline: false }
+              { name: 'Liquidity Pools', value: lp_value, inline: false }
             );
           await interaction.editReply({ embeds: [embed] });
         } catch (error) {
@@ -210,6 +211,55 @@ client.on('interactionCreate', async (interaction) => {
       const embed = new EmbedBuilder()
         .setTitle('Error')
         .setDescription('Failed to set currency. Please try again later.')
+        .setColor('#d741c4');
+      await interaction.editReply({ embeds: [embed] });
+    }
+  } else if (commandName === 'notify') {
+    await interaction.deferReply();
+    const userID = interaction.user.id;
+    try {
+      const userDoc = await usersCollection.findOne
+        ({ userID: userID });
+      if (!userDoc) {
+        const embed = new EmbedBuilder()
+          .setTitle('Error')
+          .setDescription('Please register your NEO address with the bot using `/register`.')
+          .setColor('#d741c4');
+        await interaction.editReply({ embeds: [embed] });
+        return;
+      }
+      const address = userDoc.address;
+      const api = new Api(address);
+      let myPoolData = {};
+      await api.getTokenAmount(address, myPoolData);
+      await api.getPoolInfo(myPoolData);
+      await api.getLV(myPoolData);
+      myPoolData = Object.fromEntries(Object.entries(myPoolData).sort(([,a],[,b]) => b.lv - a.lv)); // sort by lv
+      console.log(myPoolData);
+
+      const row = new ActionRowBuilder();
+      let poolID = 0;
+      for (const pool in myPoolData) {
+        if (myPoolData[pool].lv > 10) {
+          const button = new ButtonBuilder()
+            .setCustomId('pool'+ poolID++)
+            .setLabel(myPoolData[pool].symbol)
+            .setStyle(ButtonStyle.Success);
+          row.addComponents(button);
+          if (poolID === 5) {
+            break;
+          }
+        }
+      }
+      let embed = new EmbedBuilder()
+        .setTitle('Which pool would you like to set optimal restake notifications for?')
+        .setColor('#d741c4');
+      await interaction.editReply({ embeds: [embed] , components: [row] });
+    } catch (error) {
+      console.error('Failed to set notification:', error);
+      const embed = new EmbedBuilder()
+        .setTitle('Error')
+        .setDescription('Failed to set notifications. Please try again later.')
         .setColor('#d741c4');
       await interaction.editReply({ embeds: [embed] });
     }
