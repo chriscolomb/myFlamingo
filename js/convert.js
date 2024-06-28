@@ -36,6 +36,42 @@ export async function getExchangeRate(currency){
         throw error;
     } 
 }
+
+function isLeapYear(year){
+    if (year % 4 === 0){
+        if (year % 100 === 0){
+            if (year % 400 === 0){
+                return true;
+            }else{
+                return false;
+            }
+        }else{
+            return true;
+        }
+    }else{
+        return false;
+    }
+}
+
+export function getRestakeDays(compoundsPrYear){
+    const currentYear = new Date().getFullYear();
+    const isLeap = isLeapYear(currentYear);
+    let restakeDays = 0;
+    if (isLeap === true){
+        restakeDays = 366/compoundsPrYear;
+    }else{
+        restakeDays = 365/compoundsPrYear;
+    }
+    return Math.ceil(restakeDays);
+}
+
+export function getDateToRestake(time, days){
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+    const timeInMilliseconds = time + days * millisecondsPerDay;
+    const dateToRestake = new Date(timeInMilliseconds);
+    return dateToRestake;
+}
+
         
 // getExchangeRate("CAD").then(data => console.log(data));
 
@@ -48,4 +84,5 @@ export async function getExchangeRate(currency){
      
 //   });
 
-
+// console.log(getRestakeDays(5));
+// getLastClaimDate().then(data => console.log(data));

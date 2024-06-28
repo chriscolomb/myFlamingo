@@ -65,12 +65,13 @@ const getCoinEmoji = (coin) => {
   return coinEmojis.hasOwnProperty(coin) ? coinEmojis[coin] : '';
 };
 
-const getLiquidityPools = async (api, address, currency) => {
+const getLiquidityPools = async (api, currency) => {
   let myPoolData = {};
-  await api.getTokenAmount(address, myPoolData);
+  await api.getTokenAmount(myPoolData);
   await api.getPoolInfo(myPoolData);
   await api.getLV(myPoolData);
   await api.getRestakeTime(myPoolData);
+  await api.getLastClaimDate(myPoolData);
   console.log(myPoolData);
   myPoolData = Object.fromEntries(Object.entries(myPoolData).sort(([,a],[,b]) => b.lv - a.lv)); // sort by lv
 
@@ -231,7 +232,7 @@ client.on('interactionCreate', async (interaction) => {
       const address = userDoc.address;
       const api = new Api(address);
       let myPoolData = {};
-      await api.getTokenAmount(address, myPoolData);
+      await api.getTokenAmount(myPoolData);
       await api.getPoolInfo(myPoolData);
       await api.getLV(myPoolData);
       myPoolData = Object.fromEntries(Object.entries(myPoolData).sort(([,a],[,b]) => b.lv - a.lv)); // sort by lv
