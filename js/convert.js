@@ -65,11 +65,13 @@ export function getRestakeDays(compoundsPrYear){
     return Math.ceil(restakeDays);
 }
 
-async function getLastClaimDate(){
-    const data = await client.getWalletClaimsLatest('NYtBFomNFzMPsKosGajLaJ7NoaQ1b7cZXj')
-    const latestClaimData = data.data;
-    return latestClaimData;
+export function getDateToRestake(time, days){
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+    const timeInMilliseconds = time + days * millisecondsPerDay;
+    const dateToRestake = new Date(timeInMilliseconds);
+    return dateToRestake;
 }
+
         
 // getExchangeRate("CAD").then(data => console.log(data));
 
@@ -84,5 +86,3 @@ async function getLastClaimDate(){
 
 // console.log(getRestakeDays(5));
 // getLastClaimDate().then(data => console.log(data));
-
-

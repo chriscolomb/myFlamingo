@@ -104,10 +104,11 @@ client.on('interactionCreate', async (interaction) => {
           // const price = await api.get_unit_price('FUSD');
           // console.log(price);
           const myPoolData = {};
-          await api.getTokenAmount(address, myPoolData);
+          await api.getTokenAmount(myPoolData);
           await api.getPoolInfo(myPoolData);
           await api.getLV(myPoolData);
           await api.getRestakeTime(myPoolData);
+          await api.getLastClaimDate(myPoolData);
           console.log(myPoolData);
 
           const embed = new EmbedBuilder()

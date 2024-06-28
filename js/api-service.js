@@ -1,7 +1,7 @@
 // Import the client class
 import ApiClient from './api-client.js';
 import pools from '../data/pools.js';
-import { getPoolName } from './convert.js';
+import { getPoolName, getRestakeDays, getDateToRestake } from './convert.js';
 
 export default class Api{
     constructor(wallet_address){
@@ -65,10 +65,10 @@ async getPoolInfo(poolInfo){
 }
 
 // function to find the which pool the user has liquidity in and get the lp_token_amount and the symbol of the pool and store it in an object
-async getTokenAmount(address, poolInfo){
+async getTokenAmount(poolInfo){
 
     try{
-        const walletData = await this.client.getWalletWalletLatest(address);
+        const walletData = await this.client.getWalletWalletLatest(this.wallet_address);
         const walletLiquidityData = walletData.data[0].liquidity;
         
         for (const [key, value] of Object.entries(walletLiquidityData)) {
@@ -129,6 +129,30 @@ async getRestakeTime(poolInfo){
         }
         poolInfo[key].restakeTime = result;
         
+    }
+    return poolInfo;
+}
+
+async getLastClaimDate(poolInfo){
+    const data = await this.client.getWalletClaimsLatest(this.wallet_address)
+    const latestClaimData = data.data;
+    for (const [key, value] of Object.entries(poolInfo)){
+        for (let i = 0; i<latestClaimData.length; i++){
+            if (key === latestClaimData[i].pool){
+                const numDays = getRestakeDays(poolInfo[key].restakeTime.compoundsPrYear);
+                const dateToRestake = getDateToRestake(latestClaimData[i].time, numDays);
+                if (!poolInfo[key].hasOwnProperty('claim_date')){
+                    poolInfo[key].time = latestClaimData[i].time;
+                    poolInfo[key].claim_date = dateToRestake;
+                }
+                else{
+                    if (latestClaimData[i].time > poolInfo[key].claim_date){
+                        poolInfo[key].time = latestClaimData[i].time;
+                        poolInfo[key].claim_date = dateToRestake;
+                    }
+                }
+            }
+        }
     }
     return poolInfo;
 }
