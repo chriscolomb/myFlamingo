@@ -141,7 +141,7 @@ async getLastClaimDate(poolInfo){
             if (key === latestClaimData[i].pool){
                 const numDays = getRestakeDays(poolInfo[key].restakeTime.compoundsPrYear);
                 const dateToRestake = getDateToRestake(latestClaimData[i].time, numDays);
-                if (!poolInfo[key].hasOwnProperty('claim_date')){
+                if (!poolInfo[key].hasOwnProperty('last_claimed')){
                     poolInfo[key].last_claimed = new Date(latestClaimData[i].time);
                     poolInfo[key].optimal_claim_date = dateToRestake;
                 }
