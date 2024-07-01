@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, Embed } from 'discord.js';
+import { Client, GatewayIntentBits, EmbedBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder } from 'discord.js';
 
 import Api from './js/api-service.js';
 import { MongoClient, ServerApiVersion } from 'mongodb';
@@ -136,7 +136,7 @@ client.on('interactionCreate', async (interaction) => {
           .setTitle('Error')
           .setDescription('Please register your NEO address with the bot using `/register`.')
           .setColor('#d741c4');
-        await interaction.editReply({ embeds: [embed] });
+        await interaction.reply({ embeds: [embed] });
         return;
       } else {
         const address = userDoc.address;
@@ -258,46 +258,93 @@ client.on('interactionCreate', async (interaction) => {
       await interaction.editReply({ embeds: [embed] });
     }
   } else if (commandName === 'notify') {
-    await interaction.deferReply();
-    const userID = interaction.user.id;
-    try {
-      const userDoc = await usersCollection.findOne
-        ({ userID: userID });
-      if (!userDoc) {
-        const embed = new EmbedBuilder()
-          .setTitle('Error')
-          .setDescription('Please register your NEO address with the bot using `/register`.')
-          .setColor('#d741c4');
-        await interaction.editReply({ embeds: [embed] });
-        return;
-      }
-      const address = userDoc.address;
-      const api = new Api(address);
-      let myPoolData = {};
-      await api.getTokenAmount(myPoolData);
-      await api.getPoolInfo(myPoolData);
-      await api.getLV(myPoolData);
-      myPoolData = Object.fromEntries(Object.entries(myPoolData).sort(([,a],[,b]) => b.lv - a.lv)); // sort by lv
-      console.log(myPoolData);
-
-      const row = new ActionRowBuilder();
-      let poolID = 0;
-      for (const pool in myPoolData) {
-        if (myPoolData[pool].lv > 10) {
-          const button = new ButtonBuilder()
-            .setCustomId('pool'+ poolID++)
-            .setLabel(myPoolData[pool].symbol)
-            .setStyle(ButtonStyle.Success);
-          row.addComponents(button);
-          if (poolID === 5) {
-            break;
-          }
+      await interaction.deferReply();
+      const userID = interaction.user.id;
+      try {
+        const userDoc = await usersCollection.findOne({ userID: userID });
+        if (!userDoc) {
+          const embed = new EmbedBuilder()
+            .setTitle('Error')
+            .setDescription('Please register your NEO address with the bot using `/register`.')
+            .setColor('#d741c4');
+          await interaction.editReply({ embeds: [embed] });
+          return;
         }
-      }
-      let embed = new EmbedBuilder()
-        .setTitle('Which pool would you like to set optimal restake notifications for?')
-        .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] , components: [row] });
+        const address = userDoc.address;
+        const api = new Api(address);
+        let myPoolData = {};
+        await api.getTokenAmount(myPoolData);
+        await api.getPoolInfo(myPoolData);
+        await api.getLV(myPoolData);
+        await api.getRestakeTime(myPoolData);
+        await api.getLastClaimDate(myPoolData);
+
+        myPoolData = Object.fromEntries(Object.entries(myPoolData).sort(([, a], [, b]) => b.lv - a.lv)); // sort by lv
+        console.log(myPoolData);
+
+        const select = new StringSelectMenuBuilder()
+          .setCustomId('pool')
+          .setPlaceholder('Select pool...')
+          .setMaxValues(Object.keys(myPoolData).length);
+        
+        let optimal_claim_dates = {};
+        for (const pool in myPoolData) {
+        if (myPoolData[pool].lv > 10) {
+          optimal_claim_dates[myPoolData[pool].symbol] = myPoolData[pool].optimal_claim_date; 
+          select.addOptions(new StringSelectMenuOptionBuilder()
+            .setLabel(myPoolData[pool].symbol)
+            .setValue(myPoolData[pool].symbol));
+        }
+        }
+        const row = new ActionRowBuilder().addComponents(select);
+        let embed = new EmbedBuilder()
+          .setTitle('Which pool(s) would you like to set optimal restake notifications for?')
+          .setColor('#d741c4');
+
+        await interaction.editReply({ embeds: [embed], components: [row] });
+
+        const filter = (i) => i.customId === 'pool' && i.user.id === userID;
+        // 30 seconds to select
+        const collector = interaction.channel.createMessageComponentCollector({ filter, time: 30000 }); 
+        collector.on('collect', async (i) => {
+          await i.deferUpdate();
+          const selectedPools = i.values;
+          let successfulPools = [];
+          for (const pool of selectedPools) {
+            // update database with pool, optimal claim date, notified = false
+            await usersCollection.updateOne(
+              { userID: userID },
+              { $set: { [`notifications.${pool}`]: { optimal_claim_date: optimal_claim_dates[pool], notified: false } } }
+            );
+            successfulPools.push(pool);
+            console.log(pool, optimal_claim_dates[pool]);
+          }
+          embed = new EmbedBuilder()
+            .setTitle('Notifications set!')
+            .setDescription(`Successfully set notifications for \`${successfulPools.join(', ')}\` to optimal claim date.`)
+            .setColor('#d741c4');
+          await i.editReply({ embeds: [embed] , components: []});
+        });
+
+        collector.on('end', collected => {
+          if (collected.size === 0) {
+            embed = new EmbedBuilder()
+              .setTitle('No selection made.')
+              .setColor('#d741c4');
+            interaction.editReply({ embeds: [embed] , components: []});
+          }
+        });
+
+        // collector.on('end', async (collected) => {
+        //   if (collected.size === 0) {
+        //     embed = new EmbedBuilder()
+        //       .setTitle('No selection made.')
+        //       .setColor('#d741c4');
+        //     await i.editReply({ embeds: [embed], components: [] });
+        //   }
+        // });
+
+      
     } catch (error) {
       console.error('Failed to set notification:', error);
       const embed = new EmbedBuilder()
@@ -308,12 +355,31 @@ client.on('interactionCreate', async (interaction) => {
     }
   } else if (commandName === 'test') {
     await interaction.deferReply();
-    const emoji = getCoinEmoji('GAS');
+    // clear pool, optimal claim date, notified = false from database
+    const userID = interaction.user.id;
+    try {
+      await usersCollection.updateOne(
+        {
+          userID: userID
+        },
+        {
+          $unset: {
+            notifications: ""
+          }
+        }
+      );
     const embed = new EmbedBuilder()
-      .setTitle('Test')
-      .setDescription('emoji: ' + emoji)
+      .setTitle('Pool notifications cleared!')
       .setColor('#d741c4');
     await interaction.editReply({ embeds: [embed] });
+    } catch (error) {
+      console.error('Failed to clear pool notifications:', error);
+      const embed = new EmbedBuilder()
+        .setTitle('Error')
+        .setDescription('Failed to clear pool notifications. Please try again later.')
+        .setColor('#d741c4');
+      await interaction.editReply({ embeds: [embed] });
+    }
   }
 });
 
