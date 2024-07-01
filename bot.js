@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js';
+import { Client, GatewayIntentBits, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, Embed } from 'discord.js';
 
 import Api from './js/api-service.js';
 import { MongoClient, ServerApiVersion } from 'mongodb';
@@ -74,11 +74,12 @@ const getLiquidityPools = async (api, currency) => {
   await api.getLastClaimDate(myPoolData);
   console.log(myPoolData);
   myPoolData = Object.fromEntries(Object.entries(myPoolData).sort(([,a],[,b]) => b.lv - a.lv)); // sort by lv
-
   let lp_value = "";
+  let rp_value = "";
   let total_tlv = 0;
   for (const pool in myPoolData) {
     if (myPoolData[pool].lv > 10) {
+      const pool_type = myPoolData[pool].symbol.split("-")[0];
       const coin1 = myPoolData[pool].symbol.split("-")[1];
       const coin2 = myPoolData[pool].symbol.split("-")[2];
       const coin1_emoji = getCoinEmoji(coin1);
@@ -94,16 +95,30 @@ const getLiquidityPools = async (api, currency) => {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         optimal_claim_date = `${diffDays} days`;
       }
-
-      lp_value += "\n" + coin1_emoji + coin2_emoji + ` \`${myPoolData[pool].symbol}\`` + "\n";
-      lp_value += `> **TLV:** \`${tlv.toFixed(2)} ${currency}\`\n`;
-      lp_value += `> **APY:** \`${myPoolData[pool].apy.toFixed(2)}%\`\n`;
-      lp_value += `> **Last Claimed Date:** \`${myPoolData[pool].last_claimed.toDateString()}\`\n`;
-      lp_value += `> **Optimal Restake in:** \`${optimal_claim_date}\`\n`;
+      if (pool_type == "FLP") {
+        lp_value += "\n" + coin1_emoji + coin2_emoji + ` \`${myPoolData[pool].symbol}\`` + "\n";
+        lp_value += `> **TLV:** \`${tlv.toFixed(2)} ${currency}\`\n`;
+        if (coin1 === "FUSD" || coin2 === "FUSD") {
+          lp_value += `> **Average APR:** \`${myPoolData[pool].apy.toFixed(2)}%\`\n`;
+        } else {
+          lp_value += `> **Minting APR:** \`${myPoolData[pool].apy.toFixed(2)}%\`\n`;
+        }
+        lp_value += `> **Last Claimed Date:** \`${myPoolData[pool].last_claimed.toDateString()}\`\n`;
+        lp_value += `> **Optimal Restake in:** \`${optimal_claim_date}\`\n`;
+      } else if (pool_type == "FRP") {
+        rp_value += "\n" + coin1_emoji + coin2_emoji + ` \`${myPoolData[pool].symbol}\`` + "\n";
+        rp_value += `> **TLV:** \`${tlv.toFixed(2)} ${currency}\`\n`;
+        rp_value += `> **Minting APR:** \`${myPoolData[pool].apy.toFixed(2)}%\`\n`;
+        rp_value += `> **Last Claimed Date:** \`${myPoolData[pool].last_claimed.toDateString()}\`\n`;
+        rp_value += `> **Optimal Restake in:** \`${optimal_claim_date}\`\n`;
+        rp_value += `\n**Total TLV:** \`${total_tlv.toFixed(2)} ${currency}\``;
+      }
+      if (lp_value !== "" && rp_value === "") {
+        lp_value += `\n**Total TLV:** \`${total_tlv.toFixed(2)} ${currency}\``;
+      }
     }
   }
-  lp_value += `\n**Total TLV:** \`${total_tlv.toFixed(2)} ${currency}\``;
-  return lp_value;
+  return { lp_value, rp_value };
 }
 
 client.on('interactionCreate', async (interaction) => {
@@ -128,13 +143,28 @@ client.on('interactionCreate', async (interaction) => {
         const currency = userDoc.currency || "USD";
         const api = new Api(address);
         try {
-          const lp_value = await getLiquidityPools(api, currency);
+          const { lp_value, rp_value } = await getLiquidityPools(api, currency);
           const embed = new EmbedBuilder()
             .setTitle(`Dashboard for \`${address}\``)
-            .setColor('#d741c4')
-            .addFields(
+            .setColor('#d741c4');
+          
+          if (rp_value === "" && lp_value !== "") {
+            embed.addFields(
               { name: 'Liquidity Pools', value: lp_value, inline: false }
             );
+          } else if (lp_value === "" && rp_value !== "") {
+            embed.addFields(
+              { name: 'Reverse Pools', value: rp_value, inline: false }
+            );
+          } else if (lp_value !== "" && rp_value !== "") {
+            embed.addFields(
+              { name: 'Liquidity Pools', value: lp_value, inline: false },
+              { name: 'Reward Pools', value: rp_value, inline: false }
+            );
+          } else {
+            embed.setDescription('No pools found.');
+          }
+            
           await interaction.editReply({ embeds: [embed] });
         } catch (error) {
           console.error('Failed to fetch dashboard data:', error);
