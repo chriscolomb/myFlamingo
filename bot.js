@@ -335,16 +335,6 @@ client.on('interactionCreate', async (interaction) => {
           }
         });
 
-        // collector.on('end', async (collected) => {
-        //   if (collected.size === 0) {
-        //     embed = new EmbedBuilder()
-        //       .setTitle('No selection made.')
-        //       .setColor('#d741c4');
-        //     await i.editReply({ embeds: [embed], components: [] });
-        //   }
-        // });
-
-      
     } catch (error) {
       console.error('Failed to set notification:', error);
       const embed = new EmbedBuilder()
