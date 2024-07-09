@@ -98,6 +98,7 @@ getLV(poolInfo){
 }
 
 async getRestakeTime(poolInfo){
+
     const gasPrice = await this.getUnitPrice("GAS");
     // console.log("gasPrice: " + gasPrice)
     const costToReStake = 0.6 * gasPrice;
@@ -107,27 +108,29 @@ async getRestakeTime(poolInfo){
         if (!value.lv){
             continue;
         }
-        const apy = value.apy /100;
-        // console.log("apy: " + apy)
-        const usdPrDay = value.lv * (apy / 365);
-        // console.log("usdPrDay: " + usdPrDay)
+        if (value.symbol.includes("FLP")){
+            const apy = value.apy /100;
+            // console.log("apy: " + apy)
+            const usdPrDay = value.lv * (apy / 365);
+            // console.log("usdPrDay: " + usdPrDay)
 
-        let bestWorth = 0;
-        let bestNumCompound = 0;
+            let bestWorth = 0;
+            let bestNumCompound = 0;
 
-        for (let i = 1; i < 365; i +=1){
-            const tmp = ((1+apy/i) ** i) * value.lv - costToReStake * i;
-            if (tmp > bestWorth){
-                bestNumCompound = i;
-                bestWorth = tmp;
+            for (let i = 1; i < 365; i +=1){
+                const tmp = ((1+apy/i) ** i) * value.lv - costToReStake * i;
+                if (tmp > bestWorth){
+                    bestNumCompound = i;
+                    bestWorth = tmp;
+                }
             }
+            const period = 365 / bestNumCompound;  
+            const result = {
+                periodValue: usdPrDay * period,
+                compoundsPrYear: bestNumCompound
+            }
+            poolInfo[key].restakeTime = result;
         }
-        const period = 365 / bestNumCompound;  
-        const result = {
-            periodValue: usdPrDay * period,
-            compoundsPrYear: bestNumCompound
-        }
-        poolInfo[key].restakeTime = result;
         
     }
     return poolInfo;
@@ -139,18 +142,23 @@ async getLastClaimDate(poolInfo){
     for (const [key, value] of Object.entries(poolInfo)){
         for (let i = 0; i<latestClaimData.length; i++){
             if (key === latestClaimData[i].pool){
-                const numDays = getRestakeDays(poolInfo[key].restakeTime.compoundsPrYear);
-                const dateToRestake = getDateToRestake(latestClaimData[i].time, numDays);
-                if (!poolInfo[key].hasOwnProperty('last_claimed')){
-                    poolInfo[key].last_claimed = new Date(latestClaimData[i].time);
-                    poolInfo[key].optimal_claim_date = dateToRestake;
-                }
-                else{
-                    if (latestClaimData[i].time > poolInfo[key].optimal_claim_date){
+                if (value.hasOwnProperty("restakeTime")){
+                    const numDays = getRestakeDays(poolInfo[key].restakeTime.compoundsPrYear);
+                    const dateToRestake = getDateToRestake(latestClaimData[i].time, numDays);
+                    if (!poolInfo[key].hasOwnProperty('last_claimed')){
                         poolInfo[key].last_claimed = new Date(latestClaimData[i].time);
                         poolInfo[key].optimal_claim_date = dateToRestake;
                     }
-                }
+                    else{
+                        if (latestClaimData[i].time > poolInfo[key].optimal_claim_date){
+                            poolInfo[key].last_claimed = new Date(latestClaimData[i].time);
+                            poolInfo[key].optimal_claim_date = dateToRestake;
+                        }
+                    }
+                } 
+                else{
+                    poolInfo[key].last_claimed = new Date(latestClaimData[i].time);
+                } 
             }
         }
     }
