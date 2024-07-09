@@ -77,6 +77,8 @@ const getLiquidityPools = async (api, currency) => {
   let lp_value = "";
   let rp_value = "";
   let total_tlv = 0;
+  let pool_count = 0;
+
   for (const pool in myPoolData) {
     if (myPoolData[pool].lv > 10) {
       const pool_type = myPoolData[pool].symbol.split("-")[0];
@@ -86,16 +88,27 @@ const getLiquidityPools = async (api, currency) => {
       const coin2_emoji = getCoinEmoji(coin2);
       const tlv = currency !== "USD" ? await getExchangeRate(currency) * myPoolData[pool].lv : myPoolData[pool].lv;
       total_tlv += tlv;
-      // if date object optimal_claim_date is in the past, set to "Now"
+      
       let optimal_claim_date = myPoolData[pool].optimal_claim_date;
       if (optimal_claim_date < new Date()) {
         optimal_claim_date = "Now";
       } else {
         const diffTime = Math.abs(myPoolData[pool].optimal_claim_date - new Date());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        optimal_claim_date = `${diffDays} days`;
+        if (isNaN(diffDays)) {
+          optimal_claim_date = "Not Applicable (Claim at least once)";
+        } else {
+          optimal_claim_date = `${diffDays} days`;
+        }
       }
-      if (pool_type == "FLP") {
+
+      if (!myPoolData[pool].hasOwnProperty("last_claimed")) {
+        myPoolData[pool].last_claimed = "Never";
+      } else {
+        myPoolData[pool].last_claimed = myPoolData[pool].last_claimed.toDateString();
+      }
+
+      if (pool_type == "FLP" && pool_count < 5) {
         lp_value += "\n" + coin1_emoji + coin2_emoji + ` \`${myPoolData[pool].symbol}\`` + "\n";
         lp_value += `> **TLV:** \`${tlv.toFixed(2)} ${currency}\`\n`;
         if (coin1 === "FUSD" || coin2 === "FUSD") {
@@ -103,20 +116,26 @@ const getLiquidityPools = async (api, currency) => {
         } else {
           lp_value += `> **Minting APR:** \`${myPoolData[pool].apy.toFixed(2)}%\`\n`;
         }
-        lp_value += `> **Last Claimed Date:** \`${myPoolData[pool].last_claimed.toDateString()}\`\n`;
+        lp_value += `> **Last Claimed Date:** \`${myPoolData[pool].last_claimed}\`\n`;
         lp_value += `> **Optimal Restake in:** \`${optimal_claim_date}\`\n`;
-      } else if (pool_type == "FRP") {
+        pool_count++;
+      } else if (pool_type == "FRP" && pool_count < 5) {
         rp_value += "\n" + coin1_emoji + coin2_emoji + ` \`${myPoolData[pool].symbol}\`` + "\n";
         rp_value += `> **TLV:** \`${tlv.toFixed(2)} ${currency}\`\n`;
-        rp_value += `> **Minting APR:** \`${myPoolData[pool].apy.toFixed(2)}%\`\n`;
-        rp_value += `> **Last Claimed Date:** \`${myPoolData[pool].last_claimed.toDateString()}\`\n`;
-        rp_value += `> **Optimal Restake in:** \`${optimal_claim_date}\`\n`;
-        rp_value += `\n**Total TLV:** \`${total_tlv.toFixed(2)} ${currency}\``;
+        rp_value += `> **APR:** \`${myPoolData[pool].apy.toFixed(2)}%\`\n`;
+        rp_value += `> **Last Claimed Date:** \`${myPoolData[pool].last_claimed}\`\n`;
+        pool_count++;
       }
-      if (lp_value !== "" && rp_value === "") {
-        lp_value += `\n**Total TLV:** \`${total_tlv.toFixed(2)} ${currency}\``;
-      }
+
     }
+
+  }
+  if (lp_value !== "" && rp_value === "") {
+    lp_value += `\n**Total TLV:** \`${total_tlv.toFixed(2)} ${currency}\``;
+  } else if (lp_value === "" && rp_value !== "") {
+    rp_value += `\n**Total TLV:** \`${total_tlv.toFixed(2)} ${currency}\``;
+  } else if (lp_value !== "" && rp_value !== "") {
+    rp_value += `\n**Total TLV:** \`${total_tlv.toFixed(2)} ${currency}\``;
   }
   return { lp_value, rp_value };
 }
@@ -159,7 +178,7 @@ client.on('interactionCreate', async (interaction) => {
           } else if (lp_value !== "" && rp_value !== "") {
             embed.addFields(
               { name: 'Liquidity Pools', value: lp_value, inline: false },
-              { name: 'Reward Pools', value: rp_value, inline: false }
+              { name: 'Reverse Pools', value: rp_value, inline: false }
             );
           } else {
             embed.setDescription('No pools found.');
@@ -257,120 +276,121 @@ client.on('interactionCreate', async (interaction) => {
         .setColor('#d741c4');
       await interaction.editReply({ embeds: [embed] });
     }
-  } else if (commandName === 'notify') {
-      await interaction.deferReply();
-      const userID = interaction.user.id;
-      try {
-        const userDoc = await usersCollection.findOne({ userID: userID });
-        if (!userDoc) {
-          const embed = new EmbedBuilder()
-            .setTitle('Error')
-            .setDescription('Please register your NEO address with the bot using `/register`.')
-            .setColor('#d741c4');
-          await interaction.editReply({ embeds: [embed] });
-          return;
-        }
-        const address = userDoc.address;
-        const api = new Api(address);
-        let myPoolData = {};
-        await api.getTokenAmount(myPoolData);
-        await api.getPoolInfo(myPoolData);
-        await api.getLV(myPoolData);
-        await api.getRestakeTime(myPoolData);
-        await api.getLastClaimDate(myPoolData);
-
-        myPoolData = Object.fromEntries(Object.entries(myPoolData).sort(([, a], [, b]) => b.lv - a.lv)); // sort by lv
-        console.log(myPoolData);
-
-        const select = new StringSelectMenuBuilder()
-          .setCustomId('pool')
-          .setPlaceholder('Select pool...')
-          .setMaxValues(Object.keys(myPoolData).length);
-        
-        let optimal_claim_dates = {};
-        for (const pool in myPoolData) {
-        if (myPoolData[pool].lv > 10) {
-          optimal_claim_dates[myPoolData[pool].symbol] = myPoolData[pool].optimal_claim_date; 
-          select.addOptions(new StringSelectMenuOptionBuilder()
-            .setLabel(myPoolData[pool].symbol)
-            .setValue(myPoolData[pool].symbol));
-        }
-        }
-        const row = new ActionRowBuilder().addComponents(select);
-        let embed = new EmbedBuilder()
-          .setTitle('Which pool(s) would you like to set optimal restake notifications for?')
-          .setColor('#d741c4');
-
-        await interaction.editReply({ embeds: [embed], components: [row] });
-
-        const filter = (i) => i.customId === 'pool' && i.user.id === userID;
-        // 30 seconds to select
-        const collector = interaction.channel.createMessageComponentCollector({ filter, time: 30000 }); 
-        collector.on('collect', async (i) => {
-          await i.deferUpdate();
-          const selectedPools = i.values;
-          let successfulPools = [];
-          for (const pool of selectedPools) {
-            // update database with pool, optimal claim date, notified = false
-            await usersCollection.updateOne(
-              { userID: userID },
-              { $set: { [`notifications.${pool}`]: { optimal_claim_date: optimal_claim_dates[pool], notified: false } } }
-            );
-            successfulPools.push(pool);
-            console.log(pool, optimal_claim_dates[pool]);
-          }
-          embed = new EmbedBuilder()
-            .setTitle('Notifications set!')
-            .setDescription(`Successfully set notifications for \`${successfulPools.join(', ')}\` to optimal claim date.`)
-            .setColor('#d741c4');
-          await i.editReply({ embeds: [embed] , components: []});
-        });
-
-        collector.on('end', collected => {
-          if (collected.size === 0) {
-            embed = new EmbedBuilder()
-              .setTitle('No selection made.')
-              .setColor('#d741c4');
-            interaction.editReply({ embeds: [embed] , components: []});
-          }
-        });
-
-    } catch (error) {
-      console.error('Failed to set notification:', error);
-      const embed = new EmbedBuilder()
-        .setTitle('Error')
-        .setDescription('Failed to set notifications. Please try again later.')
-        .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] });
-    }
-  } else if (commandName === 'test') {
-    await interaction.deferReply();
-    // clear pool, optimal claim date, notified = false from database
-    const userID = interaction.user.id;
-    try {
-      await usersCollection.updateOne(
-        {
-          userID: userID
-        },
-        {
-          $unset: {
-            notifications: ""
-          }
-        }
-      );
-    const embed = new EmbedBuilder()
-      .setTitle('Pool notifications cleared!')
-      .setColor('#d741c4');
-    await interaction.editReply({ embeds: [embed] });
-    } catch (error) {
-      console.error('Failed to clear pool notifications:', error);
-      const embed = new EmbedBuilder()
-        .setTitle('Error')
-        .setDescription('Failed to clear pool notifications. Please try again later.')
-        .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] });
-    }
   }
+  // } else if (commandName === 'notify') {
+  //     await interaction.deferReply();
+  //     const userID = interaction.user.id;
+  //     try {
+  //       const userDoc = await usersCollection.findOne({ userID: userID });
+  //       if (!userDoc) {
+  //         const embed = new EmbedBuilder()
+  //           .setTitle('Error')
+  //           .setDescription('Please register your NEO address with the bot using `/register`.')
+  //           .setColor('#d741c4');
+  //         await interaction.editReply({ embeds: [embed] });
+  //         return;
+  //       }
+  //       const address = userDoc.address;
+  //       const api = new Api(address);
+  //       let myPoolData = {};
+  //       await api.getTokenAmount(myPoolData);
+  //       await api.getPoolInfo(myPoolData);
+  //       await api.getLV(myPoolData);
+  //       await api.getRestakeTime(myPoolData);
+  //       await api.getLastClaimDate(myPoolData);
+
+  //       myPoolData = Object.fromEntries(Object.entries(myPoolData).sort(([, a], [, b]) => b.lv - a.lv)); // sort by lv
+  //       console.log(myPoolData);
+
+  //       const select = new StringSelectMenuBuilder()
+  //         .setCustomId('pool')
+  //         .setPlaceholder('Select pool...')
+  //         .setMaxValues(Object.keys(myPoolData).length);
+        
+  //       let optimal_claim_dates = {};
+  //       for (const pool in myPoolData) {
+  //       if (myPoolData[pool].lv > 10) {
+  //         optimal_claim_dates[myPoolData[pool].symbol] = myPoolData[pool].optimal_claim_date; 
+  //         select.addOptions(new StringSelectMenuOptionBuilder()
+  //           .setLabel(myPoolData[pool].symbol)
+  //           .setValue(myPoolData[pool].symbol));
+  //       }
+  //       }
+  //       const row = new ActionRowBuilder().addComponents(select);
+  //       let embed = new EmbedBuilder()
+  //         .setTitle('Which pool(s) would you like to set optimal restake notifications for?')
+  //         .setColor('#d741c4');
+
+  //       await interaction.editReply({ embeds: [embed], components: [row] });
+
+  //       const filter = (i) => i.customId === 'pool' && i.user.id === userID;
+  //       // 30 seconds to select
+  //       const collector = interaction.channel.createMessageComponentCollector({ filter, time: 30000 }); 
+  //       collector.on('collect', async (i) => {
+  //         await i.deferUpdate();
+  //         const selectedPools = i.values;
+  //         let successfulPools = [];
+  //         for (const pool of selectedPools) {
+  //           // update database with pool, optimal claim date, notified = false
+  //           await usersCollection.updateOne(
+  //             { userID: userID },
+  //             { $set: { [`notifications.${pool}`]: { optimal_claim_date: optimal_claim_dates[pool], notified: false } } }
+  //           );
+  //           successfulPools.push(pool);
+  //           console.log(pool, optimal_claim_dates[pool]);
+  //         }
+  //         embed = new EmbedBuilder()
+  //           .setTitle('Notifications set!')
+  //           .setDescription(`Successfully set notifications for \`${successfulPools.join(', ')}\` to optimal claim date.`)
+  //           .setColor('#d741c4');
+  //         await i.editReply({ embeds: [embed] , components: []});
+  //       });
+
+  //       collector.on('end', collected => {
+  //         if (collected.size === 0) {
+  //           embed = new EmbedBuilder()
+  //             .setTitle('No selection made.')
+  //             .setColor('#d741c4');
+  //           interaction.editReply({ embeds: [embed] , components: []});
+  //         }
+  //       });
+
+  //   } catch (error) {
+  //     console.error('Failed to set notification:', error);
+  //     const embed = new EmbedBuilder()
+  //       .setTitle('Error')
+  //       .setDescription('Failed to set notifications. Please try again later.')
+  //       .setColor('#d741c4');
+  //     await interaction.editReply({ embeds: [embed] });
+  //   }
+  // } else if (commandName === 'test') {
+  //   await interaction.deferReply();
+  //   // clear pool, optimal claim date, notified = false from database
+  //   const userID = interaction.user.id;
+  //   try {
+  //     await usersCollection.updateOne(
+  //       {
+  //         userID: userID
+  //       },
+  //       {
+  //         $unset: {
+  //           notifications: ""
+  //         }
+  //       }
+  //     );
+  //   const embed = new EmbedBuilder()
+  //     .setTitle('Pool notifications cleared!')
+  //     .setColor('#d741c4');
+  //   await interaction.editReply({ embeds: [embed] });
+  //   } catch (error) {
+  //     console.error('Failed to clear pool notifications:', error);
+  //     const embed = new EmbedBuilder()
+  //       .setTitle('Error')
+  //       .setDescription('Failed to clear pool notifications. Please try again later.')
+  //       .setColor('#d741c4');
+  //     await interaction.editReply({ embeds: [embed] });
+  //   }
+  // }
 });
 
 client.login(process.env.DISCORD_TOKEN);

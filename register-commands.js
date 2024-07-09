@@ -6,7 +6,7 @@ dotenv.config();
 const commands = [
   {
     name: 'dashboard',
-    description: 'Displays the dashboard',
+    description: 'Displays the dashboard for top 5 pools',
   },
   {
     name: 'register',
@@ -24,10 +24,10 @@ const commands = [
     name: 'unregister',
     description: 'Unregisters your NEO address',
   },
-  {
-    name: 'notify',
-    description: 'Sets up notifications via DM when it is time for optimal restake'
-  },
+  // {
+  //   name: 'notify',
+  //   description: 'Sets up notifications via DM when it is time for optimal restake'
+  // },
   {
     name: 'currency',
     description: 'Sets the currency for the dashboard',
@@ -62,10 +62,10 @@ const commands = [
       },
     ],
   },
-  {
-    name: 'test',
-    description: 'Test command',
-  }
+  // {
+  //   name: 'test',
+  //   description: 'Test command',
+  // }
 ];
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
