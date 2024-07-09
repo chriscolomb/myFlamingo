@@ -146,7 +146,7 @@ client.on('interactionCreate', async (interaction) => {
   const { commandName } = interaction;
 
   if (commandName === 'dashboard') {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const userID = interaction.user.id;
     try {
       const userDoc = await usersCollection.findOne({ userID: userID });
@@ -155,7 +155,7 @@ client.on('interactionCreate', async (interaction) => {
           .setTitle('Error')
           .setDescription('Please register your NEO address with the bot using `/register`.')
           .setColor('#d741c4');
-        await interaction.reply({ embeds: [embed] , ephemeral: true});
+        await interaction.reply({ embeds: [embed] , ephemeral: true });
         return;
       } else {
         const address = userDoc.address;
@@ -184,14 +184,14 @@ client.on('interactionCreate', async (interaction) => {
             embed.setDescription('No pools found.');
           }
             
-          await interaction.editReply({ embeds: [embed] , ephemeral: true});
+          await interaction.editReply({ embeds: [embed] , ephemeral: true });
         } catch (error) {
           console.error('Failed to fetch dashboard data:', error);
           const embed = new EmbedBuilder()
             .setTitle('Error')
             .setDescription('Failed to fetch dashboard data. Please try again later.')
             .setColor('#d741c4');
-          await interaction.editReply({ embeds: [embed] , ephemeral: true});
+          await interaction.editReply({ embeds: [embed] , ephemeral: true });
         }
       }
     } catch (error) {
@@ -200,10 +200,10 @@ client.on('interactionCreate', async (interaction) => {
         .setTitle('Error')
         .setDescription('Failed to fetch user data. Please try again later.')
         .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] , ephemeral: true});
+      await interaction.editReply({ embeds: [embed] , ephemeral: true });
     }
   } else if (commandName === 'register') {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const address = interaction.options.getString('address');
     // check if address is valid NEO address
     const regex = /^N[0-9a-zA-Z]{33}$/;
@@ -212,7 +212,7 @@ client.on('interactionCreate', async (interaction) => {
         .setTitle('Error')
         .setDescription('Invalid NEO address.')
         .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] , ephemeral: true});
+      await interaction.editReply({ embeds: [embed] , ephemeral: true });
       return;
     }
     const userID = interaction.user.id;
@@ -226,17 +226,17 @@ client.on('interactionCreate', async (interaction) => {
         .setTitle('Registration')
         .setDescription(`Successfully registered \`${address}\` with the bot.`)
         .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] , ephemeral: true});
+      await interaction.editReply({ embeds: [embed] , ephemeral: true });
     } catch (error) {
       console.error('Failed to register user:', error);
       const embed = new EmbedBuilder()
         .setTitle('Error')
         .setDescription('Failed to register. Please try again later.')
         .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] , ephemeral: true});
+      await interaction.editReply({ embeds: [embed] , ephemeral: true });
     }
   } else if (commandName === 'unregister') {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const userID = interaction.user.id;
     try {
       await usersCollection.deleteOne({ userID: userID });
@@ -244,17 +244,17 @@ client.on('interactionCreate', async (interaction) => {
         .setTitle('Unregistration')
         .setDescription('Successfully unregistered with the bot.')
         .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] , ephemeral: true});
+      await interaction.editReply({ embeds: [embed] , ephemeral: true });
     } catch (error) {
       console.error('Failed to unregister user:', error);
       const embed = new EmbedBuilder()
         .setTitle('Error')
         .setDescription('Failed to unregister. Please try again later.')
         .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] , ephemeral: true});
+      await interaction.editReply({ embeds: [embed] , ephemeral: true });
     }
   } else if (commandName === 'currency') {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     const currency = interaction.options.getString('currency');
     const userID = interaction.user.id;
     try {
@@ -267,18 +267,18 @@ client.on('interactionCreate', async (interaction) => {
         .setTitle('Currency set!')
         .setDescription(`Successfully set currency to \`${currency}\`.`)
         .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] , ephemeral: true});
+      await interaction.editReply({ embeds: [embed] , ephemeral: true });
     } catch (error) {
       console.error('Failed to set currency:', error);
       const embed = new EmbedBuilder()
         .setTitle('Error')
         .setDescription('Failed to set currency. Please try again later.')
         .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] , ephemeral: true});
+      await interaction.editReply({ embeds: [embed] , ephemeral: true });
     }
   }
   // } else if (commandName === 'notify') {
-  //     await interaction.deferReply();
+  //     await interaction.deferReply({ ephemeral: true });
   //     const userID = interaction.user.id;
   //     try {
   //       const userDoc = await usersCollection.findOne({ userID: userID });
@@ -364,7 +364,7 @@ client.on('interactionCreate', async (interaction) => {
   //     await interaction.editReply({ embeds: [embed] });
   //   }
   // } else if (commandName === 'test') {
-  //   await interaction.deferReply();
+  //   await interaction.deferReply({ ephemeral: true });
   //   // clear pool, optimal claim date, notified = false from database
   //   const userID = interaction.user.id;
   //   try {
