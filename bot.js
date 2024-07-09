@@ -155,7 +155,7 @@ client.on('interactionCreate', async (interaction) => {
           .setTitle('Error')
           .setDescription('Please register your NEO address with the bot using `/register`.')
           .setColor('#d741c4');
-        await interaction.reply({ embeds: [embed] });
+        await interaction.reply({ embeds: [embed] , empheral: true});
         return;
       } else {
         const address = userDoc.address;
@@ -191,7 +191,7 @@ client.on('interactionCreate', async (interaction) => {
             .setTitle('Error')
             .setDescription('Failed to fetch dashboard data. Please try again later.')
             .setColor('#d741c4');
-          await interaction.editReply({ embeds: [embed] });
+          await interaction.editReply({ embeds: [embed] , empheral: true});
         }
       }
     } catch (error) {
@@ -200,7 +200,7 @@ client.on('interactionCreate', async (interaction) => {
         .setTitle('Error')
         .setDescription('Failed to fetch user data. Please try again later.')
         .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] , empheral: true});
     }
   } else if (commandName === 'register') {
     await interaction.deferReply();
@@ -212,7 +212,7 @@ client.on('interactionCreate', async (interaction) => {
         .setTitle('Error')
         .setDescription('Invalid NEO address.')
         .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] , empheral: true});
       return;
     }
     const userID = interaction.user.id;
@@ -226,14 +226,14 @@ client.on('interactionCreate', async (interaction) => {
         .setTitle('Registration')
         .setDescription(`Successfully registered \`${address}\` with the bot.`)
         .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] , empheral: true});
     } catch (error) {
       console.error('Failed to register user:', error);
       const embed = new EmbedBuilder()
         .setTitle('Error')
         .setDescription('Failed to register. Please try again later.')
         .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] , empheral: true});
     }
   } else if (commandName === 'unregister') {
     await interaction.deferReply();
@@ -244,14 +244,14 @@ client.on('interactionCreate', async (interaction) => {
         .setTitle('Unregistration')
         .setDescription('Successfully unregistered with the bot.')
         .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] , empheral: true});
     } catch (error) {
       console.error('Failed to unregister user:', error);
       const embed = new EmbedBuilder()
         .setTitle('Error')
         .setDescription('Failed to unregister. Please try again later.')
         .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] , empheral: true});
     }
   } else if (commandName === 'currency') {
     await interaction.deferReply();
@@ -267,14 +267,14 @@ client.on('interactionCreate', async (interaction) => {
         .setTitle('Currency set!')
         .setDescription(`Successfully set currency to \`${currency}\`.`)
         .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] , empheral: true});
     } catch (error) {
       console.error('Failed to set currency:', error);
       const embed = new EmbedBuilder()
         .setTitle('Error')
         .setDescription('Failed to set currency. Please try again later.')
         .setColor('#d741c4');
-      await interaction.editReply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] , empheral: true});
     }
   }
   // } else if (commandName === 'notify') {
