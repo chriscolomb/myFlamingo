@@ -184,7 +184,7 @@ client.on('interactionCreate', async (interaction) => {
             embed.setDescription('No pools found.');
           }
             
-          await interaction.editReply({ embeds: [embed] });
+          await interaction.editReply({ embeds: [embed] , empheral: true});
         } catch (error) {
           console.error('Failed to fetch dashboard data:', error);
           const embed = new EmbedBuilder()
