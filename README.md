@@ -2,7 +2,7 @@
 Developed by `teamduck` and `maika_coleen` on Discord.
 
 ## How to add to Discord server
-- Add **Dashboard-ATHON Bot** application via [this link](https://discord.com/oauth2/authorize?client_id=1244872561490268161)
+- Add **myFlamingo Bot** application via [this link](https://discord.com/oauth2/authorize?client_id=1244872561490268161)
 
 ## How to run
 - Ensure you have the `.env` in the root directory of the project
