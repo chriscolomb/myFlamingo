@@ -1,4 +1,4 @@
-# Dashboard-ATHON Bot
+# myFlamingo Bot
 Developed by `teamduck` and `maika_coleen` on Discord.
 
 ## How to add to Discord server
