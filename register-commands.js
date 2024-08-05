@@ -3,6 +3,15 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Production
+// const CLIENT_ID = process.env.CLIENT_ID;
+// const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
+
+// Test
+const CLIENT_ID = process.env.TEST_CLIENT_ID;
+const DISCORD_TOKEN = process.env.TEST_DISCORD_TOKEN;
+
+
 const commands = [
   {
     name: 'dashboard',
@@ -68,16 +77,16 @@ const commands = [
   // }
 ];
 
-const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
+const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 
 (async () => {
   try {
     console.log('Started clearing application (/) commands.');
 
     // For global commands
-    const globalCommands = await rest.get(Routes.applicationCommands(process.env.CLIENT_ID));
+    const globalCommands = await rest.get(Routes.applicationCommands(CLIENT_ID));
     await Promise.all(globalCommands.map(command => rest.delete(
-      `${Routes.applicationCommands(process.env.CLIENT_ID)}/${command.id}`
+      `${Routes.applicationCommands(CLIENT_ID)}/${command.id}`
     )));
 
     // For guild-specific commands
@@ -93,7 +102,7 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     console.log('Started refreshing application (/) commands.');
 
     await rest.put(
-      Routes.applicationCommands(process.env.CLIENT_ID), // For global commands
+      Routes.applicationCommands(CLIENT_ID), // For global commands
     //   Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID), // For guild-specific commands
       { body: commands },
     );
