@@ -4,12 +4,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Production
-// const CLIENT_ID = process.env.CLIENT_ID;
-// const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
+const CLIENT_ID = process.env.CLIENT_ID;
+const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 
 // Test
-const CLIENT_ID = process.env.TEST_CLIENT_ID;
-const DISCORD_TOKEN = process.env.TEST_DISCORD_TOKEN;
+// const CLIENT_ID = process.env.TEST_CLIENT_ID;
+// const DISCORD_TOKEN = process.env.TEST_DISCORD_TOKEN;
 
 
 const commands = [

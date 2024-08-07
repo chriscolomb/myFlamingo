@@ -8,10 +8,10 @@ import { getExchangeRate } from './js/convert.js';
 dotenv.config();
 
 // Production
-// const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
+const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 
 // Test
-const DISCORD_TOKEN = process.env.TEST_DISCORD_TOKEN;
+// const DISCORD_TOKEN = process.env.TEST_DISCORD_TOKEN;
 
 const client = new Client({ 
   intents: [GatewayIntentBits.Guilds],
@@ -228,7 +228,7 @@ client.on('interactionCreate', async (interaction) => {
       console.error('Failed to fetch user data:', error);
       const embed = new EmbedBuilder()
         .setTitle('Error')
-        .setDescription('Failed to fetch user data. Please try again later.')
+        .setDescription('Please register your NEO address with the bot using `/register`.')
         .setColor('#d741c4');
       await interaction.editReply({ embeds: [embed] , ephemeral: true });
     }
