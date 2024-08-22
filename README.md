@@ -1,10 +1,10 @@
-# myFlamingo Bot
+# myFlamingo - Discord Bot for Personal Liquidity Pool Tracking for Decentralized Finance Platform
 Developed by `teamduck` and `maika_coleen` on Discord.
 
 ## How to add to Discord server
 - Add **myFlamingo Bot** application via [this link](https://discord.com/oauth2/authorize?client_id=1244872561490268161)
 
-## How to run
+## How to run locally
 - Ensure you have the `.env` in the root directory of the project
 - If it is your first time running, `npm i`
 - If you added any new commands to the bot, `node register-commands.js`
